@@ -289,62 +289,96 @@ def test_win_score_constant():
 
 
 # ─────────────────────────────────────────────
+# Theme tests
+# ─────────────────────────────────────────────
+
+def test_game_name():
+    """Game name should be 'Eat Man'."""
+    assert game.GAME_NAME == "Eat Man"
+
+
+def test_story_intro():
+    """Story intro should be 'Eat the egg, avoid the hazard'."""
+    assert game.STORY_INTRO == "Eat the egg, avoid the hazard"
+
+
+def test_player_emoji():
+    """Player emoji should be the cowboy hat face."""
+    assert game.PLAYER_EMOJI == "\U0001F920"
+
+
+def test_collectible_emoji():
+    """Collectible emoji should be the egg."""
+    assert game.COLLECTIBLE_EMOJI == "\U0001F95A"
+
+
+def test_hazard_emoji():
+    """Hazard emoji should be the comet."""
+    assert game.HAZARD_EMOJI == "\u2604\uFE0F"
+
+
+def test_win_message():
+    """Win message should be 'Yay, you win'."""
+    assert game.WIN_MESSAGE == "Yay, you win"
+
+
+def test_lose_message():
+    """Lose message should be 'Failed'."""
+    assert game.LOSE_MESSAGE == "Failed"
+
+
+# ─────────────────────────────────────────────
 # draw_grid tests (using capsys to capture print output)
 # ─────────────────────────────────────────────
 
 def test_draw_grid_player_at_origin(capsys):
-    """Grid should show P at top-left when player is at (0,0)."""
+    """Grid should show cowboy emoji at top-left when player is at (0,0)."""
     game.spawn_collectible()
     game.spawn_hazard()
     game.draw_grid()
     output = capsys.readouterr().out
 
-    # First row of the grid should have "P" as the first cell
-    grid_lines = [line for line in output.split("\n") if "  ." in line or "  P" in line or "  C" in line or "  X" in line]
-    assert len(grid_lines) > 0
-    assert "P" in grid_lines[0]
+    assert game.PLAYER_EMOJI in output
 
 
 def test_draw_grid_player_at_center(capsys):
-    """Grid should show P in the middle when player is at (2,2)."""
+    """Grid should show cowboy emoji in the middle when player is at (2,2)."""
     game.player_pos = [2, 2]
     game.spawn_collectible()
     game.spawn_hazard()
     game.draw_grid()
     output = capsys.readouterr().out
 
-    grid_lines = [line for line in output.split("\n") if "P" in line]
-    assert len(grid_lines) > 0
-    assert "P" in grid_lines[0]
+    assert game.PLAYER_EMOJI in output
 
 
 def test_draw_grid_has_correct_size(capsys):
-    """Grid should have 5 rows of dots/players/collectibles/hazards."""
+    """Grid should have 5 rows of dots/emojis."""
     game.spawn_collectible()
     game.spawn_hazard()
     game.draw_grid()
     output = capsys.readouterr().out
 
-    grid_lines = [line for line in output.split("\n") if "  ." in line or "  P" in line or "  C" in line or "  X" in line]
+    grid_lines = [line for line in output.split("\n") if "  ." in line or game.PLAYER_EMOJI in line or game.COLLECTIBLE_EMOJI in line or game.HAZARD_EMOJI in line]
     assert len(grid_lines) == game.GRID_SIZE
 
 
 def test_draw_grid_shows_collectible(capsys):
-    """Grid should show C for the collectible."""
+    """Grid should show egg emoji for the collectible."""
     game.collectible_pos = [2, 3]
     game.spawn_hazard()
     game.draw_grid()
     output = capsys.readouterr().out
-    assert "C" in output
+    assert game.COLLECTIBLE_EMOJI in output
 
 
 def test_draw_grid_shows_hazard(capsys):
-    """Grid should show X for the hazard."""
+    """Grid should show comet emoji for the hazard."""
     game.hazard_pos = [1, 2]
     game.spawn_collectible()
     game.draw_grid()
     output = capsys.readouterr().out
-    assert "X" in output
+    assert game.HAZARD_EMOJI in output
 
 
 def test_draw_grid_shows_score(capsys):
@@ -357,14 +391,53 @@ def test_draw_grid_shows_score(capsys):
     assert "Score: 7/10" in output
 
 
+def test_draw_grid_shows_game_name(capsys):
+    """Grid header should display the game name."""
+    game.spawn_collectible()
+    game.spawn_hazard()
+    game.draw_grid()
+    output = capsys.readouterr().out
+    assert game.GAME_NAME in output
+
+
 def test_draw_grid_shows_only_one_player(capsys):
-    """Only one P should appear in the grid, no matter the position."""
+    """Only one player emoji should appear in the grid."""
     game.player_pos = [3, 1]
     game.spawn_collectible()
     game.spawn_hazard()
     game.draw_grid()
     output = capsys.readouterr().out
-    assert output.count("P") == 1
+    assert output.count(game.PLAYER_EMOJI) == 1
+
+
+# ─────────────────────────────────────────────
+# show_intro tests (using capsys to capture print output)
+# ─────────────────────────────────────────────
+
+def test_show_intro_displays_game_name(capsys, monkeypatch):
+    """Intro screen should display the game name."""
+    monkeypatch.setattr("builtins.input", lambda _: "")
+    game.show_intro()
+    output = capsys.readouterr().out
+    assert game.GAME_NAME in output
+
+
+def test_show_intro_displays_story(capsys, monkeypatch):
+    """Intro screen should display the story intro."""
+    monkeypatch.setattr("builtins.input", lambda _: "")
+    game.show_intro()
+    output = capsys.readouterr().out
+    assert game.STORY_INTRO in output
+
+
+def test_show_intro_displays_emojis(capsys, monkeypatch):
+    """Intro screen should display all three emojis."""
+    monkeypatch.setattr("builtins.input", lambda _: "")
+    game.show_intro()
+    output = capsys.readouterr().out
+    assert game.PLAYER_EMOJI in output
+    assert game.COLLECTIBLE_EMOJI in output
+    assert game.HAZARD_EMOJI in output
 
 
 # ─────────────────────────────────────────────

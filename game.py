@@ -7,6 +7,15 @@ GRID_SIZE = 5
 # Win condition
 WIN_SCORE = 10
 
+# Theme
+GAME_NAME = "Eat Man"
+STORY_INTRO = "Eat the egg, avoid the hazard"
+PLAYER_EMOJI = "\U0001F920"      # 🤠
+COLLECTIBLE_EMOJI = "\U0001F95A"  # 🥚
+HAZARD_EMOJI = "\u2604\uFE0F"     # ☄️
+WIN_MESSAGE = "Yay, you win"
+LOSE_MESSAGE = "Failed"
+
 # Player starting position (row, col)
 player_pos = [0, 0]
 
@@ -28,6 +37,22 @@ def reset_game():
     score = 0
     spawn_collectible()
     spawn_hazard()
+
+
+def show_intro():
+    """Display the game name and story intro at startup."""
+    os.system("clear" if os.name != "nt" else "cls")
+    print("=" * 30)
+    print(f"   {GAME_NAME}")
+    print("=" * 30)
+    print()
+    print(f"   {STORY_INTRO}")
+    print()
+    print(f"   You:    {PLAYER_EMOJI}")
+    print(f"   Egg:    {COLLECTIBLE_EMOJI}")
+    print(f"   Hazard: {HAZARD_EMOJI}")
+    print()
+    input("  Press Enter to start...")
 
 
 def spawn_collectible():
@@ -57,9 +82,9 @@ def draw_grid():
     # Clear the terminal so each frame is fresh
     os.system("clear" if os.name != "nt" else "cls")
 
-    print("=" * 20)
-    print("   TERMINAL GAME")
-    print("=" * 20)
+    print("=" * 30)
+    print(f"   {GAME_NAME}")
+    print("=" * 30)
     print(f"   Score: {score}/{WIN_SCORE}")
     print()
 
@@ -68,11 +93,11 @@ def draw_grid():
         line = ""
         for col in range(GRID_SIZE):
             if row == player_pos[0] and col == player_pos[1]:
-                line += " P"
+                line += f" {PLAYER_EMOJI}"
             elif row == collectible_pos[0] and col == collectible_pos[1]:
-                line += " C"
+                line += f" {COLLECTIBLE_EMOJI}"
             elif row == hazard_pos[0] and col == hazard_pos[1]:
-                line += " X"
+                line += f" {HAZARD_EMOJI}"
             else:
                 line += " ."
             if col < GRID_SIZE - 1:
@@ -132,6 +157,9 @@ def play_again_prompt():
 
 def game_loop():
     """Main game loop with play-again support."""
+    # Show the intro screen first
+    show_intro()
+
     while True:
         # Start a fresh game
         reset_game()
@@ -142,7 +170,7 @@ def game_loop():
 
             # Check for win condition
             if score >= WIN_SCORE:
-                print("  You WIN! 🎉 All items collected!\n")
+                print(f"  {WIN_MESSAGE}\n")
                 break
 
             # Get input from the player
@@ -160,7 +188,7 @@ def game_loop():
                 # Check for hazard first (game over takes priority)
                 if check_hazard():
                     draw_grid()
-                    print("  Game Over!\n")
+                    print(f"  {LOSE_MESSAGE}\n")
                     break
 
                 check_collectible()
