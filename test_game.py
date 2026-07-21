@@ -10,6 +10,8 @@ def setup_function():
     game.score = 0
     game.collectible_pos[0] = 0
     game.collectible_pos[1] = 0
+    game.hazard_pos[0] = 4
+    game.hazard_pos[1] = 4
 
 
 # ─────────────────────────────────────────────
@@ -164,6 +166,14 @@ def test_spawn_within_grid():
         assert 0 <= game.collectible_pos[1] < game.GRID_SIZE
 
 
+def test_spawn_collectible_not_on_hazard():
+    """Collectible should never spawn on the hazard's position."""
+    game.hazard_pos = [2, 2]
+    for _ in range(50):
+        game.spawn_collectible()
+        assert game.collectible_pos != [2, 2]
+
+
 # ─────────────────────────────────────────────
 # Collectible pickup tests
 # ─────────────────────────────────────────────
@@ -213,6 +223,60 @@ def test_multiple_pickups():
 
 
 # ─────────────────────────────────────────────
+# Hazard spawn tests
+# ─────────────────────────────────────────────
+
+def test_hazard_spawn_not_on_player():
+    """Hazard should never spawn on the player's position."""
+    game.player_pos = [0, 0]
+    for _ in range(50):
+        game.spawn_hazard()
+        assert game.hazard_pos != [0, 0]
+
+
+def test_hazard_spawn_not_on_collectible():
+    """Hazard should never spawn on the collectible's position."""
+    game.collectible_pos = [2, 2]
+    for _ in range(50):
+        game.spawn_hazard()
+        assert game.hazard_pos != [2, 2]
+
+
+def test_hazard_spawn_within_grid():
+    """Hazard should always be within grid bounds."""
+    for _ in range(50):
+        game.spawn_hazard()
+        assert 0 <= game.hazard_pos[0] < game.GRID_SIZE
+        assert 0 <= game.hazard_pos[1] < game.GRID_SIZE
+
+
+# ─────────────────────────────────────────────
+# Hazard check tests
+# ─────────────────────────────────────────────
+
+def test_hazard_check_returns_true_on_hazard():
+    """check_hazard should return True when player is on the hazard."""
+    game.hazard_pos = [0, 1]
+    game.handle_movement("d")  # move to (0,1)
+    assert game.check_hazard() is True
+
+
+def test_hazard_check_returns_false_when_safe():
+    """check_hazard should return False when player is not on the hazard."""
+    game.hazard_pos = [3, 3]
+    game.handle_movement("d")  # move to (0,1)
+    assert game.check_hazard() is False
+
+
+def test_hazard_does_not_affect_score():
+    """Stepping on a hazard should not change the score."""
+    game.hazard_pos = [0, 1]
+    game.handle_movement("d")
+    game.check_hazard()
+    assert game.score == 0
+
+
+# ─────────────────────────────────────────────
 # Win condition tests
 # ─────────────────────────────────────────────
 
@@ -237,11 +301,12 @@ def test_win_score_constant():
 def test_draw_grid_player_at_origin(capsys):
     """Grid should show P at top-left when player is at (0,0)."""
     game.spawn_collectible()
+    game.spawn_hazard()
     game.draw_grid()
     output = capsys.readouterr().out
 
-    # First grid row should contain P
-    grid_lines = [line for line in output.split("\n") if "  ." in line or "  P" in line or "  X" in line]
+    # First row of the grid should have "P" as the first cell
+    grid_lines = [line for line in output.split("\n") if "  ." in line or "  P" in line or "  C" in line or "  X" in line]
     assert len(grid_lines) > 0
     assert "P" in grid_lines[0]
 
@@ -250,6 +315,7 @@ def test_draw_grid_player_at_center(capsys):
     """Grid should show P in the middle when player is at (2,2)."""
     game.player_pos = [2, 2]
     game.spawn_collectible()
+    game.spawn_hazard()
     game.draw_grid()
     output = capsys.readouterr().out
 
@@ -259,18 +325,29 @@ def test_draw_grid_player_at_center(capsys):
 
 
 def test_draw_grid_has_correct_size(capsys):
-    """Grid should have 5 rows of dots/players/collectibles."""
+    """Grid should have 5 rows of dots/players/collectibles/hazards."""
     game.spawn_collectible()
+    game.spawn_hazard()
     game.draw_grid()
     output = capsys.readouterr().out
 
-    grid_lines = [line for line in output.split("\n") if "  ." in line or "  P" in line or "  X" in line]
+    grid_lines = [line for line in output.split("\n") if "  ." in line or "  P" in line or "  C" in line or "  X" in line]
     assert len(grid_lines) == game.GRID_SIZE
 
 
 def test_draw_grid_shows_collectible(capsys):
-    """Grid should show X for the collectible."""
+    """Grid should show C for the collectible."""
     game.collectible_pos = [2, 3]
+    game.spawn_hazard()
+    game.draw_grid()
+    output = capsys.readouterr().out
+    assert "C" in output
+
+
+def test_draw_grid_shows_hazard(capsys):
+    """Grid should show X for the hazard."""
+    game.hazard_pos = [1, 2]
+    game.spawn_collectible()
     game.draw_grid()
     output = capsys.readouterr().out
     assert "X" in output
@@ -280,6 +357,7 @@ def test_draw_grid_shows_score(capsys):
     """Grid header should display the current score."""
     game.score = 7
     game.spawn_collectible()
+    game.spawn_hazard()
     game.draw_grid()
     output = capsys.readouterr().out
     assert "Score: 7/10" in output
@@ -289,6 +367,7 @@ def test_draw_grid_shows_only_one_player(capsys):
     """Only one P should appear in the grid, no matter the position."""
     game.player_pos = [3, 1]
     game.spawn_collectible()
+    game.spawn_hazard()
     game.draw_grid()
     output = capsys.readouterr().out
     assert output.count("P") == 1

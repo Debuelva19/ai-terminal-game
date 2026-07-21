@@ -16,20 +16,34 @@ score = 0
 # Collectible position (row, col)
 collectible_pos = [0, 0]
 
+# Hazard position (row, col)
+hazard_pos = [0, 0]
+
 
 def spawn_collectible():
-    """Place the collectible at a random position that is not the player's."""
+    """Place the collectible at a random position that is not the player's or the hazard's."""
     while True:
         row = random.randint(0, GRID_SIZE - 1)
         col = random.randint(0, GRID_SIZE - 1)
-        if [row, col] != player_pos:
+        if [row, col] != player_pos and [row, col] != hazard_pos:
             collectible_pos[0] = row
             collectible_pos[1] = col
             break
 
 
+def spawn_hazard():
+    """Place the hazard at a random position that is not the player's or the collectible's."""
+    while True:
+        row = random.randint(0, GRID_SIZE - 1)
+        col = random.randint(0, GRID_SIZE - 1)
+        if [row, col] != player_pos and [row, col] != collectible_pos:
+            hazard_pos[0] = row
+            hazard_pos[1] = col
+            break
+
+
 def draw_grid():
-    """Draw the 5x5 grid with the player and collectible on it."""
+    """Draw the 5x5 grid with the player, collectible, and hazard on it."""
     # Clear the terminal so each frame is fresh
     os.system("clear" if os.name != "nt" else "cls")
 
@@ -46,6 +60,8 @@ def draw_grid():
             if row == player_pos[0] and col == player_pos[1]:
                 line += " P"
             elif row == collectible_pos[0] and col == collectible_pos[1]:
+                line += " C"
+            elif row == hazard_pos[0] and col == hazard_pos[1]:
                 line += " X"
             else:
                 line += " ."
@@ -87,10 +103,18 @@ def check_collectible():
     return False
 
 
+def check_hazard():
+    """Check if the player is on the hazard. If so, game over."""
+    if player_pos[0] == hazard_pos[0] and player_pos[1] == hazard_pos[1]:
+        return True
+    return False
+
+
 def game_loop():
-    """Main game loop - keeps running until the player quits or wins."""
-    # Spawn the first collectible
+    """Main game loop - keeps running until the player quits, wins, or hits a hazard."""
+    # Spawn the first collectible and hazard
     spawn_collectible()
+    spawn_hazard()
 
     while True:
         draw_grid()
@@ -111,6 +135,13 @@ def game_loop():
         # Handle WASD movement
         if user_input in ("w", "a", "s", "d"):
             handle_movement(user_input)
+
+            # Check for hazard first (game over takes priority)
+            if check_hazard():
+                draw_grid()
+                print("  Game Over!\n")
+                break
+
             check_collectible()
 
 
