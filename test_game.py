@@ -5,13 +5,7 @@ import game
 # Without this, one test could affect the next (order-dependent bugs).
 def setup_function():
     """Reset all game state before each test."""
-    game.player_pos[0] = 0
-    game.player_pos[1] = 0
-    game.score = 0
-    game.collectible_pos[0] = 0
-    game.collectible_pos[1] = 0
-    game.hazard_pos[0] = 4
-    game.hazard_pos[1] = 4
+    game.reset_game()
 
 
 # ─────────────────────────────────────────────
@@ -371,3 +365,86 @@ def test_draw_grid_shows_only_one_player(capsys):
     game.draw_grid()
     output = capsys.readouterr().out
     assert output.count("P") == 1
+
+
+# ─────────────────────────────────────────────
+# reset_game tests
+# ─────────────────────────────────────────────
+
+def test_reset_game_resets_player():
+    """reset_game should move player back to (0,0)."""
+    game.player_pos = [3, 4]
+    game.reset_game()
+    assert game.player_pos == [0, 0]
+
+
+def test_reset_game_resets_score():
+    """reset_game should set score back to 0."""
+    game.score = 9
+    game.reset_game()
+    assert game.score == 0
+
+
+def test_reset_game_spawns_collectible():
+    """reset_game should place the collectible somewhere on the grid."""
+    game.reset_game()
+    assert 0 <= game.collectible_pos[0] < game.GRID_SIZE
+    assert 0 <= game.collectible_pos[1] < game.GRID_SIZE
+
+
+def test_reset_game_spawns_hazard():
+    """reset_game should place the hazard somewhere on the grid."""
+    game.reset_game()
+    assert 0 <= game.hazard_pos[0] < game.GRID_SIZE
+    assert 0 <= game.hazard_pos[1] < game.GRID_SIZE
+
+
+def test_reset_game_no_overlap():
+    """reset_game should ensure player, collectible, and hazard are all separate."""
+    # Run reset multiple times to test various random outcomes
+    for _ in range(20):
+        game.reset_game()
+        assert game.player_pos != game.collectible_pos
+        assert game.player_pos != game.hazard_pos
+        assert game.collectible_pos != game.hazard_pos
+
+
+# ─────────────────────────────────────────────
+# play_again_prompt tests (using monkeypatch to mock input)
+# ─────────────────────────────────────────────
+
+def test_play_again_prompt_yes(monkeypatch):
+    """Entering 'y' should return True."""
+    monkeypatch.setattr("builtins.input", lambda _: "y")
+    assert game.play_again_prompt() is True
+
+
+def test_play_again_prompt_no(monkeypatch):
+    """Entering 'n' should return False."""
+    monkeypatch.setattr("builtins.input", lambda _: "n")
+    assert game.play_again_prompt() is False
+
+
+def test_play_again_prompt_uppercase(monkeypatch):
+    """Entering 'Y' or 'N' (uppercase) should still work."""
+    monkeypatch.setattr("builtins.input", lambda _: "Y")
+    assert game.play_again_prompt() is True
+
+    monkeypatch.setattr("builtins.input", lambda _: "N")
+    assert game.play_again_prompt() is False
+
+
+def test_play_again_prompt_with_spaces(monkeypatch):
+    """Leading/trailing spaces should be handled."""
+    monkeypatch.setattr("builtins.input", lambda _: "  y  ")
+    assert game.play_again_prompt() is True
+
+    monkeypatch.setattr("builtins.input", lambda _: "  n  ")
+    assert game.play_again_prompt() is False
+
+
+def test_play_again_prompt_invalid_then_valid(monkeypatch):
+    """Invalid input should be rejected, then valid input accepted."""
+    responses = iter(["hello", "x", "y"])
+    monkeypatch.setattr("builtins.input", lambda _: next(responses))
+    assert game.play_again_prompt() is True

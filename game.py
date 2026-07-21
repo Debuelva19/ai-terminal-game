@@ -20,6 +20,16 @@ collectible_pos = [0, 0]
 hazard_pos = [0, 0]
 
 
+def reset_game():
+    """Reset all game state for a new game."""
+    global score
+    player_pos[0] = 0
+    player_pos[1] = 0
+    score = 0
+    spawn_collectible()
+    spawn_hazard()
+
+
 def spawn_collectible():
     """Place the collectible at a random position that is not the player's or the hazard's."""
     while True:
@@ -110,39 +120,55 @@ def check_hazard():
     return False
 
 
-def game_loop():
-    """Main game loop - keeps running until the player quits, wins, or hits a hazard."""
-    # Spawn the first collectible and hazard
-    spawn_collectible()
-    spawn_hazard()
-
+def play_again_prompt():
+    """Ask the user if they want to play again. Returns True for yes, False for no."""
     while True:
-        draw_grid()
+        response = input("  Play again? (y/n): ").strip().lower()
+        if response == "y":
+            return True
+        elif response == "n":
+            return False
 
-        # Check for win condition
-        if score >= WIN_SCORE:
-            print("  You WIN! 🎉 All items collected!\n")
-            break
 
-        # Get input from the player
-        user_input = input("  Move: ").strip().lower()
+def game_loop():
+    """Main game loop with play-again support."""
+    while True:
+        # Start a fresh game
+        reset_game()
 
-        # Check if the player wants to quit
-        if user_input == "q":
-            print("\n  Thanks for playing! Catch ya later! 👋\n")
-            break
+        # Inner game loop - runs one round
+        while True:
+            draw_grid()
 
-        # Handle WASD movement
-        if user_input in ("w", "a", "s", "d"):
-            handle_movement(user_input)
-
-            # Check for hazard first (game over takes priority)
-            if check_hazard():
-                draw_grid()
-                print("  Game Over!\n")
+            # Check for win condition
+            if score >= WIN_SCORE:
+                print("  You WIN! 🎉 All items collected!\n")
                 break
 
-            check_collectible()
+            # Get input from the player
+            user_input = input("  Move: ").strip().lower()
+
+            # Check if the player wants to quit
+            if user_input == "q":
+                print("\n  Thanks for playing! Catch ya later! 👋\n")
+                return
+
+            # Handle WASD movement
+            if user_input in ("w", "a", "s", "d"):
+                handle_movement(user_input)
+
+                # Check for hazard first (game over takes priority)
+                if check_hazard():
+                    draw_grid()
+                    print("  Game Over!\n")
+                    break
+
+                check_collectible()
+
+        # Ask to play again after win or loss
+        if not play_again_prompt():
+            print("\n  Thanks for playing! Catch ya later! 👋\n")
+            return
 
 
 # Run the game when this file is executed
